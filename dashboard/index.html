@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HydroCharge Miner Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .tagline {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-unit {
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-optimal {
+            background: #4ade80;
+        }
+        
+        .status-warning {
+            background: #fbbf24;
+        }
+        
+        .status-critical {
+            background: #ef4444;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .chart-title {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+        }
+        
+        .alerts-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .alert {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+        }
+        
+        .alert-info { border-color: #3b82f6; }
+        .alert-warning { border-color: #fbbf24; }
+        .alert-success { border-color: #4ade80; }
+        .alert-critical { border-color: #ef4444; }
+        
+        .alert-time {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        
+        .mining-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        .coin-selector {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .coin-btn {
+            padding: 10px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .coin-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .coin-btn.active {
+            background: #4ade80;
+            border-color: #4ade80;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌊⚡ HydroCharge Miner</h1>
+            <p class="tagline">Turn water flow into Bitcoin flow</p>
+        </header>
+        
+        <!-- Real-time Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">💧 Flow Rate</div>
+                <div class="stat-value" id="flowRate">15.2</div>
+                <div class="stat-unit">L/min</div>
+                <div style="margin-top: 10px;">
+                    <span class="status-indicator status-optimal"></span>
+                    <span>Optimal</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">⚙️ Turbine RPM</div>
+                <div class="stat-value" id="turbineRPM">1,847</div>
+                <div class="stat-unit">RPM</div>
+                <div style="margin-top: 10px;">
+                    <span class="status-indicator status-optimal"></span>
+                    <span>Optimal</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">⚡ Piezo Voltage</div>
+                <div class="stat-value" id="piezoVoltage">4.2</div>
+                <div class="stat-unit">Volts</div>
+                <div style="margin-top: 10px;">
+                    <span class="status-indicator status-optimal"></span>
+                    <span>Active</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">🔋 Total Power</div>
+                <div class="stat-value" id="totalPower">897</div>
+                <div class="stat-unit">Watts</div>
+                <div style="margin-top: 10px;">
+                    <span class="status-indicator status-optimal"></span>
+                    <span>Generating</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">📊 Efficiency</div>
+                <div class="stat-value" id="efficiency">87.3</div>
+                <div class="stat-unit">%</div>
+                <div style="margin-top: 10px;">
+                    <span class="status-indicator status-optimal"></span>
+                    <span>Excellent</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">💰 Daily Revenue</div>
+                <div class="stat-value" id="dailyRevenue">$14.85</div>
+                <div class="stat-unit">USD/day</div>
+                <div style="margin-top: 10px;">
+                    <span class="status-indicator status-optimal"></span>
+                    <span id="currentCoin">Mining LTC</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mining Status -->
+        <div class="alerts-section">
+            <h2>⛏️ Mining Control</h2>
+            <div class="mining-status">
+                <div>
+                    <strong>Current Algorithm:</strong> <span id="miningAlgo">Scrypt (LTC + DOGE)</span>
+                </div>
+                <div class="coin-selector">
+                    <button class="coin-btn" onclick="switchCoin('BTC')">BTC</button>
+                    <button class="coin-btn active" onclick="switchCoin('LTC')">LTC</button>
+                    <button class="coin-btn" onclick="switchCoin('DOGE')">DOGE</button>
+                    <button class="coin-btn" onclick="autoSwitch()">🤖 Auto</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="charts-grid" style="margin-top: 30px;">
+            <div class="chart-card">
+                <div class="chart-title">Power Generation (Last Hour)</div>
+                <canvas id="powerChart"></canvas>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-title">Revenue Tracking (Last 24h)</div>
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Alerts -->
+        <div class="alerts-section" style="margin-top: 30px;">
+            <h2>🔔 System Alerts</h2>
+            <div id="alertsContainer">
+                <div class="alert alert-success">
+                    <strong>💎 Optimal Performance</strong>
+                    <p>Efficiency at 87.3% - turbine operating in sweet spot</p>
+                    <div class="alert-time">2 minutes ago</div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <strong>🔄 Coin Switch Executed</strong>
+                    <p>Switched from BTC to LTC - Expected gain: +18.5%</p>
+                    <div class="alert-time">15 minutes ago</div>
+                </div>
+                
+                <div class="alert alert-success">
+                    <strong>⚡ Piezo Array Active</strong>
+                    <p>Contributing 310W to total power output</p>
+                    <div class="alert-time">1 hour ago</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Power Generation Chart
+        const powerCtx = document.getElementById('powerChart').getContext('2d');
+        const powerChart = new Chart(powerCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 60}, (_, i) => `${59-i}m`),
+                datasets: [{
+                    label: 'Total Power (W)',
+                    data: generateRandomData(60, 850, 920),
+                    borderColor: '#4ade80',
+                    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Turbine (W)',
+                    data: generateRandomData(60, 550, 610),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Piezo (W)',
+                    data: generateRandomData(60, 280, 320),
+                    borderColor: '#fbbf24',
+                    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: '#fff' } }
+                },
+                scales: {
+                    y: { 
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    x: { 
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+        
+        // Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const revenueChart = new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                datasets: [{
+                    label: 'Revenue ($/hour)',
+                    data: generateRandomData(24, 0.55, 0.68),
+                    backgroundColor: 'rgba(74, 222, 128, 0.6)',
+                    borderColor: '#4ade80',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: '#fff' } }
+                },
+                scales: {
+                    y: { 
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    x: { 
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+        
+        // Helper function
+        function generateRandomData(count, min, max) {
+            return Array.from({length: count}, () => 
+                Math.random() * (max - min) + min
+            );
+        }
+        
+        // Real-time updates (simulated)
+        setInterval(() => {
+            // Update stats with slight variations
+            document.getElementById('flowRate').textContent = 
+                (15 + Math.random() * 0.5).toFixed(1);
+            document.getElementById('turbineRPM').textContent = 
+                Math.floor(1840 + Math.random() * 20).toLocaleString();
+            document.getElementById('piezoVoltage').textContent = 
+                (4.1 + Math.random() * 0.2).toFixed(1);
+            document.getElementById('totalPower').textContent = 
+                Math.floor(890 + Math.random() * 20);
+            document.getElementById('efficiency').textContent = 
+                (86 + Math.random() * 2).toFixed(1);
+            
+            // Update charts
+            powerChart.data.datasets[0].data.shift();
+            powerChart.data.datasets[0].data.push(890 + Math.random() * 30);
+            powerChart.update();
+        }, 2000);
+        
+        // Coin switching
+        function switchCoin(coin) {
+            const coins = {
+                'BTC': { algo: 'SHA-256', revenue: '$12.40' },
+                'LTC': { algo: 'Scrypt (LTC + DOGE)', revenue: '$14.85' },
+                'DOGE': { algo: 'Scrypt', revenue: '$11.20' }
+            };
+            
+            document.getElementById('miningAlgo').textContent = coins[coin].algo;
+            document.getElementById('dailyRevenue').textContent = coins[coin].revenue;
+            document.getElementById('currentCoin').textContent = `Mining ${coin}`;
+            
+            // Update button states
+            document.querySelectorAll('.coin-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Add alert
+            addAlert('info', `🔄 Switching to ${coin}`, `Algorithm: ${coins[coin].algo}`);
+        }
+        
+        function autoSwitch() {
+            addAlert('success', '🤖 Auto-switching enabled', 'AI will optimize coin selection every 5 minutes');
+        }
+        
+        function addAlert(type, title, message) {
+            const alertsContainer = document.getElementById('alertsContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <strong>${title}</strong>
+                <p>${message}</p>
+                <div class="alert-time">Just now</div>
+            `;
+            alertsContainer.insertBefore(alert, alertsContainer.firstChild);
+            
+            // Remove old alerts (keep max 5)
+            while (alertsContainer.children.length > 5) {
+                alertsContainer.removeChild(alertsContainer.lastChild);
+            }
+        }
+    </script>
+</body>
+</html>
